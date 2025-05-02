@@ -1,0 +1,196 @@
+/**
+ * Arquivo de Especificação JavaCC para MiniJava (Inicial)
+ */
+
+// 1. Opções de Configuração do JavaCC
+options {
+  STATIC = false; // Gera métodos não estáticos no parser, facilita a instanciação
+  LOOKAHEAD = 1; // Número de tokens a "espiar" adiante. Começar com 1.
+  IGNORE_CASE = false; // MiniJava é case-sensitive (diferencia maiúsculas/minúsculas)
+  // DEBUG_PARSER = true; // habilita mensagens de depuração do parser
+  // DEBUG_LOOKAHEAD = true; // depurar o lookahead
+  // DEBUG_TOKEN_MANAGER = true; // depura o gerenciador de tokens (lexer)
+}
+
+// 2. Bloco PARSER_BEGIN/END: Código Java a ser incluído na classe gerada
+PARSER_BEGIN(MiniJavaParser)
+
+import java.io.*; // Import necessário para ler a entrada
+
+/**
+ * Classe principal do Parser para MiniJava.
+ * Contém o método main para iniciar a análise.
+ */
+public class MiniJavaParser {
+
+  /**
+   * Método principal para executar o parser.
+   * Lê da entrada padrão e tenta analisar como um programa MiniJava.
+   */
+  public static void main(String[] args) {
+    System.out.println("Analisador MiniJava iniciado.");
+    System.out.println("Digite um programa MiniJava e termine com EOF (Ctrl+D no Linux/macOS, Ctrl+Z Enter no Windows):");
+
+    MiniJavaParser parser;
+    if (args.length == 0) {
+      // Lê da entrada padrão (console)
+      parser = new MiniJavaParser(System.in);
+    } else if (args.length == 1) {
+      // Lê de um arquivo especificado na linha de comando
+      try {
+        parser = new MiniJavaParser(new FileInputStream(args[0]));
+        System.out.println("Lendo do arquivo: " + args[0]);
+      } catch (FileNotFoundException e) {
+        System.err.println("Erro: Arquivo não encontrado: " + args[0]);
+        return; // Termina se o arquivo não for encontrado
+      }
+    } else {
+      System.err.println("Uso: java MiniJavaParser [arquivo]");
+      return; // Termina se os argumentos estiverem errados
+    }
+
+    try {
+      // Chama a regra inicial da gramática ("Program")
+      parser.Program();
+      System.out.println("\nAnálise sintática concluída com sucesso!");
+    } catch (ParseException e) {
+      // Erro encontrado durante a análise sintática
+      System.err.println("\nErro de Sintaxe:");
+      System.err.println(e.getMessage());
+      // e.printStackTrace(); // Descomente para mais detalhes do erro
+    } catch (TokenMgrError e) {
+      // Erro encontrado durante a análise léxica (token inválido)
+      System.err.println("\nErro Léxico:");
+      System.err.println(e.getMessage());
+    } catch (Exception e) {
+      // Outros erros inesperados
+      System.err.println("\nErro inesperado:");
+      e.printStackTrace();
+    }
+  }
+}
+
+PARSER_END(MiniJavaParser)
+
+// 3. Definições Léxicas (Tokens)
+
+/* Espaços em branco e comentários a serem ignorados pelo parser */
+SKIP : {
+  " "                               /* Espaço */
+| "\t"                              /* Tabulação */
+| "\n"                              /* Nova linha */
+| "\r"                              /* Retorno de carro */
+| <"//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")> /* Comentário de linha única */
+| <"/*" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/"> /* Comentário de múltiplas linhas */
+}
+
+/* Palavras-chave (Tokens reservados) */
+TOKEN : {
+  < CLASS: "class" >
+| < PUBLIC: "public" >
+| < STATIC: "static" >
+| < VOID: "void" >
+| < MAIN: "main" >
+| < STRING: "String" >
+| < EXTENDS: "extends" >
+| < RETURN: "return" >
+| < INT: "int" >
+| < BOOLEAN: "boolean" >
+| < IF: "if" >
+| < ELSE: "else" >
+| < WHILE: "while" >
+| < PRINTLN: "System.out.println" > // Tratar como uma unidade
+| < LENGTH: "length" >
+| < TRUE: "true" >
+| < FALSE: "false" >
+| < THIS: "this" >
+| < NEW: "new" >
+}
+
+/* Símbolos (Operadores, Delimitadores) */
+TOKEN : {
+  < LPAREN: "(" >    /* Parêntese esquerdo */
+| < RPAREN: ")" >    /* Parêntese direito */
+| < LBRACE: "{" >    /* Chave esquerda */
+| < RBRACE: "}" >    /* Chave direita */
+| < LBRACKET: "[" >  /* Colchete esquerdo */
+| < RBRACKET: "]" >  /* Colchete direito */
+| < SEMICOLON: ";" > /* Ponto e vírgula */
+| < DOT: "." >       /* Ponto */
+| < COMMA: "," >     /* Vírgula */
+| < ASSIGN: "=" >    /* Atribuição */
+| < LT: "<" >        /* Menor que */
+| < PLUS: "+" >      /* Adição */
+| < MINUS: "-" >     /* Subtração */
+| < MULTIPLY: "*" >  /* Multiplicação */
+| < AND: "&&" >      /* E lógico */
+}
+
+/* Literais e Identificadores */
+TOKEN : {
+  // Identificadores: letra seguida por letras, dígitos ou underscore
+  < IDENTIFIER: <LETTER> (<LETTER> | <DIGIT> | "_")* >
+|
+  // Literais inteiros: um ou mais dígitos
+  < INTEGER_LITERAL: (<DIGIT>)+ >
+|
+  // Definições auxiliares (não são tokens por si sós, usadas em outras regras)
+  < #LETTER: ["a"-"z", "A"-"Z"] >
+| < #DIGIT: ["0"-"9"] >
+}
+
+// 4. Regras Gramaticais (Produções BNF)
+
+/**
+ * Regra inicial: Define a estrutura geral de um programa MiniJava.
+ * Program ::= MainClass ( ClassDeclaration )* <EOF>
+ */
+void Program() :
+{} // Bloco de declaração Java (vazio aqui)
+{ // Bloco de expansão da regra
+  MainClass() // Um programa DEVE ter uma classe principal
+  ( ClassDeclaration() )* // Seguido por zero ou mais outras declarações de classe
+  <EOF> // Deve terminar com o fim do arquivo (End Of File)
+}
+
+/**
+ * Define a estrutura da classe principal.
+ * MainClass ::= "class" Identifier "{" "public" "static" "void" "main" "(" "String" "[" "]" Identifier ")" "{" Statement "}" "}"
+ */
+void MainClass() :
+{}
+{
+  <CLASS> <IDENTIFIER> <LBRACE> // class NomeDaClasse {
+  <PUBLIC> <STATIC> <VOID> <MAIN> <LPAREN> <STRING> <LBRACKET> <RBRACKET> <IDENTIFIER> <RPAREN> // public static void main ( String [ ] nomeArgs )
+  <LBRACE> // {
+  // Statement() // Aqui viriam os comandos dentro do main. Deixaremos vazio por enquanto para simplificar.
+  // Para permitir um corpo vazio no main, podemos simplesmente não exigir nada aqui por agora,
+  // ou criar uma regra Statement que pode ser vazia. Vamos deixar sem nada por enquanto.
+  <RBRACE> // }
+  <RBRACE> // }
+}
+
+/**
+ * Define a estrutura de outras classes (não a principal).
+ * ClassDeclaration ::= "class" Identifier ( "extends" Identifier )? "{" ( VarDeclaration )* ( MethodDeclaration )* "}"
+ * Por enquanto criei uma versão MUITO simplificada apenas para a regra Program() compilar.
+ */
+void ClassDeclaration() :
+{}
+{
+  <CLASS> <IDENTIFIER>
+  ( <EXTENDS> <IDENTIFIER> )? // Parte opcional "extends NomeSuperClasse"
+  <LBRACE>
+  // ( VarDeclaration() )* // Zero ou mais declarações de variáveis (a implementar)
+  // ( MethodDeclaration() )* // Zero ou mais declarações de métodos (a implementar)
+  <RBRACE>
+}
+
+// --- PLACEHOLDERS PARA REGRAS FUTURAS ---
+// A gente vai precisar adicionar regras para VarDeclaration, MethodDeclaration, Type, Statement, Expression, etc.
+// Exemplo de placeholder (não faz nada ainda):
+/*
+void VarDeclaration() : {} { <INT> <IDENTIFIER> <SEMICOLON> } // Exemplo MUITO simples
+void MethodDeclaration() : {} { <PUBLIC> <INT> <IDENTIFIER> <LPAREN> <RPAREN> <LBRACE> <RETURN> <INTEGER_LITERAL> <SEMICOLON> <RBRACE> } // Exemplo MUITO simples
+void Statement() : {} { <PRINTLN> <LPAREN> <INTEGER_LITERAL> <RPAREN> <SEMICOLON> } // Exemplo MUITO simples
+*/
