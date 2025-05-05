@@ -1,69 +1,50 @@
 /**
- * Arquivo de Especificação JavaCC para MiniJava (Inicial)
+ * Arquivo de Especificação JavaCC para MiniJava (Completo com Lookaheads para Warnings)
  */
 
-// 1. Opções de Configuração do JavaCC
 options {
-  STATIC = false; // Gera métodos não estáticos no parser, facilita a instanciação
-  LOOKAHEAD = 1; // Número de tokens a "espiar" adiante. Começar com 1.
-  IGNORE_CASE = false; // MiniJava é case-sensitive (diferencia maiúsculas/minúsculas)
-  // DEBUG_PARSER = true; // habilita mensagens de depuração do parser
-  // DEBUG_LOOKAHEAD = true; // depurar o lookahead
-  // DEBUG_TOKEN_MANAGER = true; // depura o gerenciador de tokens (lexer)
+  STATIC = false;
+  LOOKAHEAD = 1; // Mantemos global 1, usando lookaheads específicos onde necessário.
+  IGNORE_CASE = false;
+  DEBUG_PARSER = true;
 }
 
-// 2. Bloco PARSER_BEGIN/END: Código Java a ser incluído na classe gerada
 PARSER_BEGIN(MiniJavaParser)
 
-import java.io.*; // Import necessário para ler a entrada
+import java.io.*;
 
-/**
- * Classe principal do Parser para MiniJava.
- * Contém o método main para iniciar a análise.
- */
 public class MiniJavaParser {
 
-  /**
-   * Método principal para executar o parser.
-   * Lê da entrada padrão e tenta analisar como um programa MiniJava.
-   */
   public static void main(String[] args) {
     System.out.println("Analisador MiniJava iniciado.");
-    System.out.println("Digite um programa MiniJava e termine com EOF (Ctrl+D no Linux/macOS, Ctrl+Z Enter no Windows):");
-
     MiniJavaParser parser;
     if (args.length == 0) {
-      // Lê da entrada padrão (console)
+      System.out.println("Lendo da entrada padrão...");
       parser = new MiniJavaParser(System.in);
     } else if (args.length == 1) {
-      // Lê de um arquivo especificado na linha de comando
       try {
-        parser = new MiniJavaParser(new FileInputStream(args[0]));
         System.out.println("Lendo do arquivo: " + args[0]);
+        parser = new MiniJavaParser(new FileInputStream(args[0]));
       } catch (FileNotFoundException e) {
         System.err.println("Erro: Arquivo não encontrado: " + args[0]);
-        return; // Termina se o arquivo não for encontrado
+        return;
       }
     } else {
       System.err.println("Uso: java MiniJavaParser [arquivo]");
-      return; // Termina se os argumentos estiverem errados
+      return;
     }
 
     try {
-      // Chama a regra inicial da gramática ("Program")
       parser.Program();
       System.out.println("\nAnálise sintática concluída com sucesso!");
     } catch (ParseException e) {
-      // Erro encontrado durante a análise sintática
       System.err.println("\nErro de Sintaxe:");
       System.err.println(e.getMessage());
-      // e.printStackTrace(); // Descomente para mais detalhes do erro
+      // e.printStackTrace();
     } catch (TokenMgrError e) {
-      // Erro encontrado durante a análise léxica (token inválido)
       System.err.println("\nErro Léxico:");
       System.err.println(e.getMessage());
     } catch (Exception e) {
-      // Outros erros inesperados
       System.err.println("\nErro inesperado:");
       e.printStackTrace();
     }
@@ -72,125 +53,129 @@ public class MiniJavaParser {
 
 PARSER_END(MiniJavaParser)
 
-// 3. Definições Léxicas (Tokens)
-
-/* Espaços em branco e comentários a serem ignorados pelo parser */
+/* Espaços em branco e comentários */
 SKIP : {
-  " "                               /* Espaço */
-| "\t"                              /* Tabulação */
-| "\n"                              /* Nova linha */
-| "\r"                              /* Retorno de carro */
-| <"//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")> /* Comentário de linha única */
-| <"/*" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/"> /* Comentário de múltiplas linhas */
+  " " | "\t" | "\n" | "\r"
+| <"//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")>
+| <"/*" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/">
 }
 
-/* Palavras-chave (Tokens reservados) */
+/* Palavras-chave */
 TOKEN : {
-  < CLASS: "class" >
-| < PUBLIC: "public" >
-| < STATIC: "static" >
-| < VOID: "void" >
-| < MAIN: "main" >
-| < STRING: "String" >
-| < EXTENDS: "extends" >
-| < RETURN: "return" >
-| < INT: "int" >
-| < BOOLEAN: "boolean" >
-| < IF: "if" >
-| < ELSE: "else" >
-| < WHILE: "while" >
-| < PRINTLN: "System.out.println" > // Tratar como uma unidade
-| < LENGTH: "length" >
-| < TRUE: "true" >
-| < FALSE: "false" >
-| < THIS: "this" >
-| < NEW: "new" >
+  < CLASS: "class" > | < PUBLIC: "public" > | < STATIC: "static" > | < VOID: "void" > | < MAIN: "main" > | < STRING: "String" > | < EXTENDS: "extends" > | < RETURN: "return" > | < INT: "int" > | < BOOLEAN: "boolean" > | < IF: "if" > | < ELSE: "else" > | < WHILE: "while" > | < PRINTLN: "System.out.println" > | < LENGTH: "length" > | < TRUE: "true" > | < FALSE: "false" > | < THIS: "this" > | < NEW: "new" >
 }
 
-/* Símbolos (Operadores, Delimitadores) */
+/* Símbolos */
 TOKEN : {
-  < LPAREN: "(" >    /* Parêntese esquerdo */
-| < RPAREN: ")" >    /* Parêntese direito */
-| < LBRACE: "{" >    /* Chave esquerda */
-| < RBRACE: "}" >    /* Chave direita */
-| < LBRACKET: "[" >  /* Colchete esquerdo */
-| < RBRACKET: "]" >  /* Colchete direito */
-| < SEMICOLON: ";" > /* Ponto e vírgula */
-| < DOT: "." >       /* Ponto */
-| < COMMA: "," >     /* Vírgula */
-| < ASSIGN: "=" >    /* Atribuição */
-| < LT: "<" >        /* Menor que */
-| < PLUS: "+" >      /* Adição */
-| < MINUS: "-" >     /* Subtração */
-| < MULTIPLY: "*" >  /* Multiplicação */
-| < AND: "&&" >      /* E lógico */
+  < LPAREN: "(" > | < RPAREN: ")" > | < LBRACE: "{" > | < RBRACE: "}" > | < LBRACKET: "[" > | < RBRACKET: "]" > | < SEMICOLON: ";" > | < DOT: "." > | < COMMA: "," > | < ASSIGN: "=" > | < LT: "<" > | < PLUS: "+" > | < MINUS: "-" > | < MULTIPLY: "*" > | < AND: "&&" > | < NOT: "!" >
 }
 
 /* Literais e Identificadores */
 TOKEN : {
-  // Identificadores: letra seguida por letras, dígitos ou underscore
-  < IDENTIFIER: <LETTER> (<LETTER> | <DIGIT> | "_")* >
-|
-  // Literais inteiros: um ou mais dígitos
   < INTEGER_LITERAL: (<DIGIT>)+ >
-|
-  // Definições auxiliares (não são tokens por si sós, usadas em outras regras)
-  < #LETTER: ["a"-"z", "A"-"Z"] >
+| < IDENTIFIER: <LETTER> (<LETTER> | <DIGIT> | "_")* >
+| < #LETTER: ["a"-"z", "A"-"Z"] >
 | < #DIGIT: ["0"-"9"] >
 }
 
-// 4. Regras Gramaticais (Produções BNF)
+// --------------------
+// REGRAS GRAMATICAIS
+// --------------------
 
-/**
- * Regra inicial: Define a estrutura geral de um programa MiniJava.
- * Program ::= MainClass ( ClassDeclaration )* <EOF>
- */
-void Program() :
-{} // Bloco de declaração Java (vazio aqui)
-{ // Bloco de expansão da regra
-  MainClass() // Um programa DEVE ter uma classe principal
-  ( ClassDeclaration() )* // Seguido por zero ou mais outras declarações de classe
-  <EOF> // Deve terminar com o fim do arquivo (End Of File)
-}
+void Program() : {} { MainClass() ( ClassDeclaration() )* <EOF> }
 
-/**
- * Define a estrutura da classe principal.
- * MainClass ::= "class" Identifier "{" "public" "static" "void" "main" "(" "String" "[" "]" Identifier ")" "{" Statement "}" "}"
- */
-void MainClass() :
-{}
+void MainClass() : {}
 {
-  <CLASS> <IDENTIFIER> <LBRACE> // class NomeDaClasse {
-  <PUBLIC> <STATIC> <VOID> <MAIN> <LPAREN> <STRING> <LBRACKET> <RBRACKET> <IDENTIFIER> <RPAREN> // public static void main ( String [ ] nomeArgs )
-  <LBRACE> // {
-  // Statement() // Aqui viriam os comandos dentro do main. Deixaremos vazio por enquanto para simplificar.
-  // Para permitir um corpo vazio no main, podemos simplesmente não exigir nada aqui por agora,
-  // ou criar uma regra Statement que pode ser vazia. Vamos deixar sem nada por enquanto.
-  <RBRACE> // }
-  <RBRACE> // }
-}
-
-/**
- * Define a estrutura de outras classes (não a principal).
- * ClassDeclaration ::= "class" Identifier ( "extends" Identifier )? "{" ( VarDeclaration )* ( MethodDeclaration )* "}"
- * Por enquanto criei uma versão MUITO simplificada apenas para a regra Program() compilar.
- */
-void ClassDeclaration() :
-{}
-{
-  <CLASS> <IDENTIFIER>
-  ( <EXTENDS> <IDENTIFIER> )? // Parte opcional "extends NomeSuperClasse"
-  <LBRACE>
-  // ( VarDeclaration() )* // Zero ou mais declarações de variáveis (a implementar)
-  // ( MethodDeclaration() )* // Zero ou mais declarações de métodos (a implementar)
+  <CLASS> <IDENTIFIER> <LBRACE>
+  <PUBLIC> <STATIC> <VOID> <MAIN> <LPAREN> <STRING> <LBRACKET> <RBRACKET> <IDENTIFIER> <RPAREN>
+  <LBRACE> Statement() <RBRACE>
   <RBRACE>
 }
 
-// --- PLACEHOLDERS PARA REGRAS FUTURAS ---
-// A gente vai precisar adicionar regras para VarDeclaration, MethodDeclaration, Type, Statement, Expression, etc.
-// Exemplo de placeholder (não faz nada ainda):
-/*
-void VarDeclaration() : {} { <INT> <IDENTIFIER> <SEMICOLON> } // Exemplo MUITO simples
-void MethodDeclaration() : {} { <PUBLIC> <INT> <IDENTIFIER> <LPAREN> <RPAREN> <LBRACE> <RETURN> <INTEGER_LITERAL> <SEMICOLON> <RBRACE> } // Exemplo MUITO simples
-void Statement() : {} { <PRINTLN> <LPAREN> <INTEGER_LITERAL> <RPAREN> <SEMICOLON> } // Exemplo MUITO simples
-*/
+void ClassDeclaration() : {}
+{
+  <CLASS> <IDENTIFIER> ( <EXTENDS> <IDENTIFIER> )?
+  <LBRACE> ( VarDeclaration() )* ( MethodDeclaration() )* <RBRACE>
+}
+
+void VarDeclaration() : {} { Type() <IDENTIFIER> <SEMICOLON> }
+
+void MethodDeclaration() : {}
+{
+  <PUBLIC> Type() <IDENTIFIER> <LPAREN> ( FormalParameterList() )? <RPAREN>
+  <LBRACE>
+  // Adicionar LOOKAHEAD aqui para distinguir VarDeclaration de Statement
+  // Verifique se a sequência Type Identifier ; realmente existe antes de tentar VarDeclaration
+  ( LOOKAHEAD( Type() <IDENTIFIER> <SEMICOLON> ) VarDeclaration() )*
+  ( Statement() )*            // Só tenta Statement se não for VarDeclaration
+  <RETURN> Expression() <SEMICOLON>
+  <RBRACE>
+}
+
+void FormalParameterList() : {} { FormalParameter() ( <COMMA> FormalParameter() )* }
+
+void FormalParameter() : {} { Type() <IDENTIFIER> }
+
+void Type() : {}
+{
+  LOOKAHEAD(2) <INT> <LBRACKET> <RBRACKET>
+| <BOOLEAN>
+| <INT>
+| <IDENTIFIER>
+}
+
+void Statement() : {}
+{
+  <LBRACE> ( Statement() )* <RBRACE>
+| <IF> <LPAREN> Expression() <RPAREN> Statement() <ELSE> Statement()
+| <WHILE> <LPAREN> Expression() <RPAREN> Statement()
+| <PRINTLN> <LPAREN> Expression() <RPAREN> <SEMICOLON>
+| // Lookahead para distinguir atribuição de array
+  LOOKAHEAD( Identifier() <LBRACKET> )
+  Identifier() <LBRACKET> Expression() <RBRACKET> <ASSIGN> Expression() <SEMICOLON>
+| // Lookahead EXPLÍCITO para atribuição simples
+  LOOKAHEAD( Identifier() <ASSIGN> ) // <-- ADICIONE ESTE LOOKAHEAD
+  Identifier() <ASSIGN> Expression() <SEMICOLON>
+}
+
+// --- Regras de Expressão (LL(1) com precedência) ---
+
+void Expression() : {} { CompareExpression() ( <AND> CompareExpression() )* }
+
+void CompareExpression() : {} { AddExpression() ( <LT> AddExpression() )* }
+
+void AddExpression() : {} { MultiplyExpression() ( ( <PLUS> | <MINUS> ) MultiplyExpression() )* }
+
+void MultiplyExpression() : {} { UnaryExpression() ( <MULTIPLY> UnaryExpression() )* }
+
+void UnaryExpression() : {} { <NOT> UnaryExpression() | PostfixExpression() }
+
+void PostfixExpression() : {}
+{
+  PrimaryExpression()
+  ( // Adicionado LOOKAHEAD(2) para resolver conflito .length vs .Identifier()
+    <LBRACKET> Expression() <RBRACKET>
+  | LOOKAHEAD(2) // Resolve Warning 2
+    <DOT> <LENGTH>
+  | <DOT> <IDENTIFIER> <LPAREN> ( ExpressionList() )? <RPAREN>
+  )*
+}
+
+void PrimaryExpression() : {}
+{
+  <INTEGER_LITERAL>
+| <TRUE>
+| <FALSE>
+| <IDENTIFIER>
+| <THIS>
+| <LPAREN> Expression() <RPAREN>
+| // Adicionado LOOKAHEAD(2) para resolver conflito new int[] vs new Identifier()
+  LOOKAHEAD(2) // Resolve Warning 3
+  <NEW> <INT> <LBRACKET> Expression() <RBRACKET>
+| <NEW> <IDENTIFIER> <LPAREN> <RPAREN>
+}
+
+void ExpressionList() : {} { Expression() ( <COMMA> Expression() )* }
+
+// Regra auxiliar para lookahead em Statement
+void Identifier() : {} { <IDENTIFIER> }
