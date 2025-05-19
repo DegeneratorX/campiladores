@@ -6,7 +6,10 @@
  * analisador léxico (que divide o código em "palavras" ou tokens) e um
  * analisador sintático (que verifica se a sequência de tokens forma uma estrutura válida).
  *
- * Enzo 
+ * Enzo Lozano Abreu - 538196
+ * Gutemberg dos Santos Andrade - 493938
+ * João Lucas Rodrigues da Silva - 536997
+ * Victor Medeiros Martins - 401339
  */
 
 // --- Seção de Opções ---

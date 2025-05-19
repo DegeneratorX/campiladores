@@ -1,5 +1,10 @@
 /**
  * Arquivo de Especificação JavaCC para MiniJava (Completo com Lookaheads para Warnings)
+ *
+ * Enzo Lozano Abreu - 538196
+ * Gutemberg dos Santos Andrade - 493938
+ * João Lucas Rodrigues da Silva - 536997
+ * Victor Medeiros Martins - 401339
  */
 
 options {
